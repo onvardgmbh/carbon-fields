@@ -14,7 +14,8 @@ class Templater {
 	 * Hook all templates to the administration footer.
 	 */
 	public function __construct() {
-		add_action( 'admin_footer', array( $this, 'render_templates' ), 999 );
+		add_action( 'admin_footer',                            array( $this, 'render_templates' ), 999 );
+		add_action( 'customize_controls_print_footer_scripts', array( $this, 'render_templates' ), 999 );
 	}
 
 	/**

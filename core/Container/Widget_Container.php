@@ -53,7 +53,17 @@ class Widget_Container extends Container {
 		$screen = get_current_screen();
 		$is_widget_save = isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'save-widget';
 
-		return $screen && $screen->id === 'widgets' || $is_widget_save;
+		if ($is_widget_save) {
+			return true;
+		}
+
+		if ($screen) {
+			if ($screen->id === 'widgets' || $screen->id === 'customize') {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
 

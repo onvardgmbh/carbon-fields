@@ -12,7 +12,10 @@ class Rich_Text_Field extends Textarea_Field {
 	 * Admin initialization actions.
 	 */
 	public function admin_init() {
-		add_action( 'admin_footer', array( get_class( $this ), 'editor_init' ) );
+		add_action( 'admin_footer',                            array( get_class( $this ), 'editor_init' ), 10 );
+		add_action( 'customize_controls_print_footer_scripts', array( get_class( $this ), 'editor_init' ), 9 );
+		add_action( 'customize_controls_print_footer_scripts', array( '_WP_Editors', 'editor_js' ),        50 );
+		add_action( 'customize_controls_print_footer_scripts', array( '_WP_Editors', 'enqueue_scripts' ),  1 );
 	}
 
 	/**

@@ -282,8 +282,11 @@ abstract class Container {
 	public function boot() {
 		$this->add_template( $this->type, array( $this, 'template' ) );
 
-		add_action( 'admin_footer', array( get_class(), 'admin_hook_scripts' ), 5 );
-		add_action( 'admin_footer', array( get_class(), 'admin_hook_styles' ), 5 );
+		add_action( 'admin_footer',                            array( get_class(), 'admin_hook_scripts' ), 5 );
+		add_action( 'admin_footer',                            array( get_class(), 'admin_hook_styles' ),  5 );
+
+		add_action( 'customize_controls_print_footer_scripts', array( get_class(), 'admin_hook_scripts' ), 5 );
+		add_action( 'customize_controls_print_footer_scripts', array( get_class(), 'admin_hook_styles' ),  5 );
 	}
 
 	/**

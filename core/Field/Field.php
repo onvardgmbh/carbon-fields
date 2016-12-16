@@ -218,10 +218,13 @@ class Field {
 
 		$this->add_template( $this->get_type(), array( $this, 'template' ) );
 
-		add_action( 'admin_footer', array( get_class(), 'admin_hook_scripts' ), 5 );
-		add_action( 'admin_footer', array( get_class(), 'admin_hook_styles' ), 5 );
-
+		add_action( 'admin_footer', array( get_class(),        'admin_hook_scripts' ),    5 );
+		add_action( 'admin_footer', array( get_class(),        'admin_hook_styles' ),     5 );
 		add_action( 'admin_footer', array( get_class( $this ), 'admin_enqueue_scripts' ), 5 );
+
+		add_action( 'customize_controls_print_footer_scripts', array( get_class(),        'admin_hook_scripts' ),    5 );
+		add_action( 'customize_controls_print_footer_scripts', array( get_class(),        'admin_hook_styles' ),     5 );
+		add_action( 'customize_controls_print_footer_scripts', array( get_class( $this ), 'admin_enqueue_scripts' ), 5 );
 	}
 
 	/**
