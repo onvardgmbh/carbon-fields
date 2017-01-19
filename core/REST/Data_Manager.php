@@ -7,6 +7,21 @@ use Carbon_Fields\Container\Container;
  * Class for retrieving relative data for REST responses
  */
 class Data_Manager {
+
+	/**
+	 * Singleton implementation.
+	 *
+	 * @return Sidebar_Manager
+	 */
+	public static function instance() {
+		// Store the instance locally to avoid private static replication.
+		static $instance;
+
+		if ( ! is_a( $instance, 'Data_Manager' ) ) {
+			$instance = new Data_Manager();
+		}
+		return $instance;
+	}
 	
 	/**
 	 * Special field types, that require 
@@ -55,9 +70,7 @@ class Data_Manager {
 
 				$field->load();
 
-				$field_type = in_array( strtolower( $field->type ), $this->special_field_types ) ? strtolower( $field->type ) : 'generic';
-
-				$response[ $field->get_name() ] = call_user_func( array( $this, "load_{$field_type}_field_value" ), $field );
+				$response[ $field->get_name() ] = $this->get_field_value( $field );
 			}
 		}
 
@@ -99,12 +112,23 @@ class Data_Manager {
 	}
 
 	/**
+	 * Loads field value (proxy for specific field implementations)
+	 * 
+	 * @param  object $field
+	 * @return array
+	 */
+	public function get_field_value( $field ) {
+		$field_type = in_array( strtolower( $field->type ), $this->special_field_types ) ? strtolower( $field->type ) : 'generic';
+		return call_user_func( array( $this, "get_{$field_type}_field_value" ), $field );
+	}
+
+	/**
 	 * Loads field value
 	 * 
 	 * @param  object $field
 	 * @return array
 	 */
-	public function load_generic_field_value( $field ) {
+	protected function get_generic_field_value( $field ) {
 		return $field->get_value();
 	}
 
@@ -114,7 +138,7 @@ class Data_Manager {
 	 * @param  object $field 
 	 * @return array
 	 */
-	public function load_complex_field_value( $field ) {
+	protected function get_complex_field_value( $field ) {
 		$field_json = $field->to_json( false );
 		return $field_json['value'];
 	}
@@ -125,7 +149,7 @@ class Data_Manager {
 	 * @param  object $field 
 	 * @return array
 	 */
-	public function load_map_field_value( $field ) {
+	protected function get_map_field_value( $field ) {
 		$map_data = $field->to_json( false );
 
 		return array(
@@ -142,7 +166,7 @@ class Data_Manager {
 	 * @param  object $field 
 	 * @return array
 	 */
-	public function load_relationship_field_value( $field ) {
+	protected function get_relationship_field_value( $field ) {
 		return maybe_unserialize( $field->get_value() );
 	}
 
@@ -152,7 +176,7 @@ class Data_Manager {
 	 * @param object $field 
 	 * @return array
 	 */
-	public function load_association_field_value( $field ) {
+	protected function get_association_field_value( $field ) {
 		$field->process_value();
 		return $field->get_value();
 	}

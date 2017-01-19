@@ -12,11 +12,19 @@ use Carbon_Fields\Updater\Updater;
 class Decorator {
 
 	/**
-	 * Instance of the Data_Manager class
-	 * 
-	 * @var object
+	 * Singleton implementation.
+	 *
+	 * @return Sidebar_Manager
 	 */
-	public $data_manager;
+	public static function instance() {
+		// Store the instance locally to avoid private static replication.
+		static $instance;
+
+		if ( ! is_a( $instance, 'Decorator' ) ) {
+			$instance = new Decorator();
+		}
+		return $instance;
+	}
 
 	/**
 	 * All fields that need to be registeres
@@ -25,8 +33,7 @@ class Decorator {
 	 */
 	private $fields = array();
 
-	function __construct( $data_manager ) {
-		$this->data_manager = $data_manager;
+	function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_fields' ) );
 	}
 
@@ -50,7 +57,7 @@ class Decorator {
 			foreach ( $fields as $field ) {
 				register_rest_field( $types,
 					$field->get_name(), array(
-						'get_callback'    => array( $this, "load_{$context}_field_value" ),
+						'get_callback'    => array( $this, "get_{$context}_field_value" ),
 						'update_callback' => array( $this, "update_{$context}_field_value" ),
 						'schema'          => null,
 					)
@@ -79,7 +86,7 @@ class Decorator {
 	 * @return array
 	 */
 	public function filter_fields( $container ) {
-		return $this->data_manager->filter_fields( $container->get_fields() );
+		return Data_Manager::instance()->filter_fields( $container->get_fields() );
 	}
 
 	/**
@@ -91,9 +98,9 @@ class Decorator {
 	 * @param WP_REST_Request $request Current request
 	 * @return mixed
 	 */
-	public function load_post_meta_field_value( $object, $field_name, $request ) {
+	public function get_post_meta_field_value( $object, $field_name, $request ) {
 		$context = 'Post_Meta';
-		return $this->load_field_value( $object, $field_name, $request, $context );
+		return $this->get_field_value( $object, $field_name, $request, $context );
 	}
 	
 	/**
@@ -105,9 +112,9 @@ class Decorator {
 	 * @param WP_REST_Request $request Current request
 	 * @return mixed
 	 */
-	public function load_term_meta_field_value( $object, $field_name, $request ) {
+	public function get_term_meta_field_value( $object, $field_name, $request ) {
 		$context = 'Term_Meta';
-		return $this->load_field_value( $object, $field_name, $request, $context );
+		return $this->get_field_value( $object, $field_name, $request, $context );
 	}
 
 	/**
@@ -119,9 +126,9 @@ class Decorator {
 	 * @param WP_REST_Request $request Current request
 	 * @return mixed
 	 */
-	public function load_comment_meta_field_value( $object, $field_name, $request ) {
+	public function get_comment_meta_field_value( $object, $field_name, $request ) {
 		$context = 'Comment_Meta';
-		return $this->load_field_value( $object, $field_name, $request, $context );
+		return $this->get_field_value( $object, $field_name, $request, $context );
 	}
 
 	/**
@@ -133,9 +140,9 @@ class Decorator {
 	 * @param WP_REST_Request $request Current request
 	 * @return mixed
 	 */
-	public function load_user_meta_field_value( $object, $field_name, $request ) {
+	public function get_user_meta_field_value( $object, $field_name, $request ) {
 		$context = 'User_Meta';
-		return $this->load_field_value( $object, $field_name, $request, $context );
+		return $this->get_field_value( $object, $field_name, $request, $context );
 	}
 
 	/**
@@ -147,7 +154,7 @@ class Decorator {
  	 * @param string $context Post_Meta|Term_Meta|User_Meta|Comment_Meta
  	 * @return mixed
 	 */	
-	public function load_field_value( $object, $field_name, $request, $context ) {
+	public function get_field_value( $object, $field_name, $request, $context ) {
 		$field = $this->get_current_field( $field_name, $context );
 
 		if ( empty( $field ) ) {
@@ -159,9 +166,7 @@ class Decorator {
 		$field->get_datastore()->set_id( $object['id'] );
 		$field->load();
 
-		$field_type = $this->get_field_type( $field );
-
-		return call_user_func( array( $this->data_manager, "load_{$field_type}_field_value" ), $field );
+		return Data_Manager::instance()->get_field_value( $field );
 	}
 
 	/**
@@ -248,17 +253,6 @@ class Decorator {
 			echo wp_strip_all_tags( $e->getMessage() );
 			exit;
 		}
-	}
-
-	/**
-	 * Get the type of a field
-	 * 
-	 * @param object $field
-	 * @return string
-	 */
-	public function get_field_type( $field ) {
-		$type_to_lower = strtolower( $field->type );
-		return in_array( $type_to_lower, $this->data_manager->special_field_types ) ? $type_to_lower : 'generic';
 	}
 
 	/**

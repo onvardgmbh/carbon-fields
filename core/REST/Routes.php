@@ -9,6 +9,21 @@ use Carbon_Fields\Updater\Updater;
 class Routes {
 
 	/**
+	 * Singleton implementation.
+	 *
+	 * @return Sidebar_Manager
+	 */
+	public static function instance() {
+		// Store the instance locally to avoid private static replication.
+		static $instance;
+
+		if ( ! is_a( $instance, 'Routes' ) ) {
+			$instance = new Routes();
+		}
+		return $instance;
+	}
+
+	/**
 	 * Carbon Fields routes
 	 * 
 	 * @var array
@@ -63,17 +78,8 @@ class Routes {
 	 * @var string
 	 */
 	protected $vendor = 'carbon-fields';
-
-	/**
-	 * Instance of the Data_Manager class
-	 * 
-	 * @var object
-	 */
-	public $data_manager;
 	
-	public function __construct( $data_manager ) {
-		$this->data_manager = $data_manager;
-
+	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ), 15 );
 	}
 
@@ -182,14 +188,14 @@ class Routes {
 	}
 
 	/**
-	 * Wrapper method used for retrieving data from the $data_manager
+	 * Wrapper method used for retrieving data from Data_Manager
 	 * 
 	 * @param  string $container_type 
 	 * @param  string $id
 	 * @return array
 	 */
 	public function get_data( $container_type, $id = '' ) {
-		return $this->data_manager->get_data( $container_type, $id );
+		return Data_Manager::instance()->get_data( $container_type, $id );
 	}
 
 	/**
