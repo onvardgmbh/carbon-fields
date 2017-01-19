@@ -39,6 +39,31 @@ class User_Meta_Container extends Container {
 	}
 
 	/**
+	 * Set the user ID the container will operate with.
+	 *
+	 * @param int $user_id
+	 **/
+	public function set_user_id( $user_id ) {
+		$this->user_id = $user_id;
+		$this->get_datastore()->set_id( $user_id );
+	}
+
+	/**
+	 * Checks whether the current request is valid
+	 *
+	 * @return bool
+	 **/
+	public function is_valid_save( $user_id = 0 ) {
+		if ( ! isset( $_REQUEST[ $this->get_nonce_name() ] ) || ! wp_verify_nonce( $_REQUEST[ $this->get_nonce_name() ], $this->get_nonce_name() ) ) { // Input var okay.
+			return false;
+		} else if ( ! $this->is_valid_attach() ) {
+			return false;
+		}
+
+		return $this->is_valid_attach_for_object( $user_id );
+	}
+
+	/**
 	 * Perform save operation after successful is_valid_save() check.
 	 * The call is propagated to all fields in the container.
 	 *
@@ -56,72 +81,6 @@ class User_Meta_Container extends Container {
 		}
 
 		do_action( 'carbon_after_save_user_meta', $user_id );
-	}
-
-	/**
-	 * Checks whether the current request is valid
-	 *
-	 * @return bool
-	 **/
-	public function is_valid_save( $user_id = 0 ) {
-		if ( ! isset( $_REQUEST[ $this->get_nonce_name() ] ) || ! wp_verify_nonce( $_REQUEST[ $this->get_nonce_name() ], $this->get_nonce_name() ) ) { // Input var okay.
-			return false;
-		} else if ( ! $this->is_valid_attach() ) {
-			return false;
-		}
-
-		return $this->is_valid_save_conditions( $user_id );
-	}
-
-	/**
-	 * Perform checks whether the current save() request is valid
-	 *
-	 * @param int $user_id ID of the user against which save() is ran
-	 * @return bool
-	 **/
-	public function is_valid_save_conditions( $user_id ) {
-		$valid = true;
-		$user = get_userdata( $user_id );
-
-		if ( empty( $user->roles ) ) {
-			return;
-		}
-
-		// Check user role
-		if ( ! empty( $this->settings['show_on']['role'] ) ) {
-			$allowed_roles = (array) $this->settings['show_on']['role'];
-
-			// array_shift removed the returned role from the $user_profile->roles
-			// $roles_to_shift prevents changing of the $user_profile->roles variable
-			$roles_to_shift = $user->roles;
-			$profile_role = array_shift( $roles_to_shift );
-			if ( ! in_array( $profile_role, $allowed_roles ) ) {
-				$valid = false;
-			}
-		}
-
-		return $valid;
-	}
-
-	/**
-	 * Show the container only on users who have the $role role.
-	 *
-	 * @param string $role
-	 * @return object $this
-	 **/
-	public function show_on_user_role( $role ) {
-		$this->settings['show_on']['role'] = (array) $role;
-
-		return $this;
-	}
-
-	/**
-	 * Add the container to the user
-	 **/
-	public function attach() {
-		add_action( 'show_user_profile', array( $this, 'render' ), 10, 1 );
-		add_action( 'edit_user_profile', array( $this, 'render' ), 10, 1 );
-		add_action( 'user_new_form', array( $this, 'render' ), 10, 1 );
 	}
 
 	/**
@@ -147,6 +106,44 @@ class User_Meta_Container extends Container {
 	}
 
 	/**
+	 * Perform checks whether the container should be attached for the specified object (id)
+	 *
+	 * @return bool True if the container is allowed to be attached
+	 **/
+	public function is_valid_attach_for_object( $object_id = 0 ) {
+		$valid = true;
+		$user = get_userdata( $object_id );
+
+		if ( empty( $user->roles ) ) {
+			return;
+		}
+
+		// Check user role
+		if ( ! empty( $this->settings['show_on']['role'] ) ) {
+			$allowed_roles = (array) $this->settings['show_on']['role'];
+
+			// array_shift removed the returned role from the $user_profile->roles
+			// $roles_to_shift prevents changing of the $user_profile->roles variable
+			$roles_to_shift = $user->roles;
+			$profile_role = array_shift( $roles_to_shift );
+			if ( ! in_array( $profile_role, $allowed_roles ) ) {
+				$valid = false;
+			}
+		}
+
+		return $valid;
+	}
+
+	/**
+	 * Add the container to the user
+	 **/
+	public function attach() {
+		add_action( 'show_user_profile', array( $this, 'render' ), 10, 1 );
+		add_action( 'edit_user_profile', array( $this, 'render' ), 10, 1 );
+		add_action( 'user_new_form', array( $this, 'render' ), 10, 1 );
+	}
+
+	/**
 	 * Output the container markup
 	 **/
 	public function render( $user_profile = null ) {
@@ -165,12 +162,14 @@ class User_Meta_Container extends Container {
 	}
 
 	/**
-	 * Set the user ID the container will operate with.
+	 * Show the container only on users who have the $role role.
 	 *
-	 * @param int $user_id
+	 * @param string $role
+	 * @return object $this
 	 **/
-	public function set_user_id( $user_id ) {
-		$this->user_id = $user_id;
-		$this->get_datastore()->set_id( $user_id );
+	public function show_on_user_role( $role ) {
+		$this->settings['show_on']['role'] = (array) $role;
+
+		return $this;
 	}
 }

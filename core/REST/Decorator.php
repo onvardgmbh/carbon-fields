@@ -66,7 +66,7 @@ class Decorator {
 	 * @return array
 	 */
 	public function get_containers() {
-		return array_filter( Container::$active_containers, function( $container ) {
+		return array_filter( Container::get_active_containers( true ), function( $container ) {
 			return $container->type !== 'Theme_Options' && $container->get_rest_visibility(); 
 		} );
 	}

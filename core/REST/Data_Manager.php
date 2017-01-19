@@ -33,17 +33,6 @@ class Data_Manager {
 	);
 
 	/**
-	 * Instance of the Container_Validator class
-	 * 
-	 * @var object
-	 */
-	public $container_validator;
-
-	public function __construct( $validator ) {
-		$this->container_validator = $validator;
-	}
-
-	/**
 	 * Returns the Carbon Fields data based
 	 * on $type and $id
 	 * 
@@ -84,8 +73,8 @@ class Data_Manager {
 	 * @return array
 	 */
 	public function filter_containers( $type, $id = '' ) {
-		return array_filter( Container::$active_containers, function( $container ) use ( $type, $id ) {
-			return $this->container_validator->is_valid_container( $container, $type, $id );
+		return array_filter( Container::get_active_containers( true ), function( $container ) use ( $type, $id ) {
+			return ( $container->type === $type && $container->is_valid_attach_for_object( $id ) );
 		} );
 	}
 

@@ -40,7 +40,7 @@ abstract class Container implements Datastore_Holder_Interface {
 	 * @see _attach()
 	 * @var array
 	 */
-	public static $active_containers = array();
+	protected static $active_containers = array();
 
 	/**
 	 * List of fields attached to the current page view
@@ -141,7 +141,7 @@ abstract class Container implements Datastore_Holder_Interface {
 	 * @see  get_rest_visibility
 	 * @var boolean
 	 */
-	protected $visible_in_rest = false;
+	protected $visible_in_rest = true;
 
 	/**
 	 * Create a new container of type $type and name $name and label $label.
@@ -200,8 +200,16 @@ abstract class Container implements Datastore_Holder_Interface {
 	 *
 	 * @return array
 	 **/
-	public static function get_active_containers() {
-		return self::$active_containers;
+	public static function get_active_containers( $in_rest = false ) {
+		$containers = self::$active_containers;
+
+		if ( $in_rest ) {
+			$containers = array_filter( $containers, function( $container ) {
+				return $container->get_rest_visibility();
+			} );
+		}
+
+		return $containers;
 	}
 
 	/**
@@ -468,6 +476,15 @@ abstract class Container implements Datastore_Holder_Interface {
 	 * @return bool True if the container is allowed to be attached
 	 **/
 	public function is_valid_attach() {
+		return $this->is_valid_attach_for_object();
+	}
+
+	/**
+	 * Perform checks whether the container should be attached for the specified object (id)
+	 *
+	 * @return bool True if the container is allowed to be attached
+	 **/
+	public function is_valid_attach_for_object( $object_id = 0 ) {
 		return true;
 	}
 

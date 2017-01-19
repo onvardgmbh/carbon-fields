@@ -50,6 +50,32 @@ class Term_Meta_Container extends Container {
 	}
 
 	/**
+	 * Set the term ID the container will operate with.
+	 *
+	 * @param int $term_id
+	 **/
+	public function set_term_id( $term_id ) {
+		$this->term_id = $term_id;
+		$this->get_datastore()->set_id( $term_id );
+	}
+
+	/**
+	 * Perform checks whether the current save() request is valid.
+	 *
+	 * @param int $term_id ID of the term against which save() is ran
+	 * @return bool
+	 **/
+	public function is_valid_save( $term_id = null ) {
+		if ( ! isset( $_REQUEST[ $this->get_nonce_name() ] ) || ! wp_verify_nonce( $_REQUEST[ $this->get_nonce_name() ], $this->get_nonce_name() ) ) { // Input var okay.
+			return false;
+		} else if ( $term_id < 1 ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Perform save operation after successful is_valid_save() check.
 	 * The call is propagated to all fields in the container.
 	 *
@@ -67,6 +93,22 @@ class Term_Meta_Container extends Container {
 	}
 
 	/**
+	 * Returns the number of parents of a taxonomy term
+	 * 
+	 * @param  object $term 
+	 * @return int
+	 */
+	protected function get_term_level( $term ) {
+		$ancestors = array();	
+		while ( ! is_wp_error( $term ) && ! empty( $term->parent ) && ! in_array( $term->parent, $ancestors ) ) {
+			$ancestors[] = intval( $term->parent );
+			$term        = get_term( $term->parent );
+		}
+
+		return count( $ancestors ) + 1;
+	}
+
+	/**
 	 * Perform checks whether the container should be attached during the current request
 	 *
 	 * @return bool True if the container is allowed to be attached
@@ -80,16 +122,31 @@ class Term_Meta_Container extends Container {
 	}
 
 	/**
-	 * Perform checks whether the current save() request is valid.
+	 * Perform checks whether the container should be attached for the specified object (id)
 	 *
-	 * @param int $term_id ID of the term against which save() is ran
-	 * @return bool
+	 * @return bool True if the container is allowed to be attached
 	 **/
-	public function is_valid_save( $term_id = null ) {
-		if ( ! isset( $_REQUEST[ $this->get_nonce_name() ] ) || ! wp_verify_nonce( $_REQUEST[ $this->get_nonce_name() ], $this->get_nonce_name() ) ) { // Input var okay.
+	public function is_valid_attach_for_object( $object_id = 0 ) {
+		$term = get_term( $object_id );
+
+		if ( empty( $term ) || is_wp_error( $term ) ) { 
 			return false;
-		} else if ( $term_id < 1 ) {
+		}
+		
+		$taxonomy = $term->taxonomy;
+
+		if ( ! in_array( $taxonomy, $this->settings['taxonomy'] ) ) {
 			return false;
+		}
+
+		if ( $this->settings['show_on_level'] ) { 
+			
+			$show_level = $this->settings['show_on_level'];
+			$term_level = $this->get_term_level( $term );
+
+			if ( $term_level !== $show_level ) {
+				return false;
+			}
 		}
 
 		return true;
@@ -136,16 +193,6 @@ class Term_Meta_Container extends Container {
 		}
 
 		include \Carbon_Fields\DIR . '/templates/Container/term_meta.php';
-	}
-
-	/**
-	 * Set the term ID the container will operate with.
-	 *
-	 * @param int $term_id
-	 **/
-	public function set_term_id( $term_id ) {
-		$this->term_id = $term_id;
-		$this->get_datastore()->set_id( $term_id );
 	}
 
 	/**

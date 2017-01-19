@@ -57,6 +57,16 @@ class Post_Meta_Container extends Container {
 	}
 
 	/**
+	 * Set the post ID the container will operate with.
+	 *
+	 * @param int $post_id
+	 **/
+	public function set_post_id( $post_id ) {
+		$this->post_id = $post_id;
+		$this->get_datastore()->set_id( $post_id );
+	}
+
+	/**
 	 * Check if all required container settings have been specified
 	 *
 	 * @param array $settings Container settings
@@ -122,6 +132,27 @@ class Post_Meta_Container extends Container {
 	}
 
 	/**
+	 * Perform checks whether the current save() request is valid
+	 * Possible errors are triggering save() for autosave requests
+	 * or performing post save outside of the post edit page (like Quick Edit)
+	 *
+	 * @see is_valid_attach_for_object()
+	 * @param int $post_id ID of the post against which save() is ran
+	 * @return bool
+	 **/
+	public function is_valid_save( $post_id = 0 ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return false;
+		} else if ( ! isset( $_REQUEST[ $this->get_nonce_name() ] ) || ! wp_verify_nonce( $_REQUEST[ $this->get_nonce_name() ], $this->get_nonce_name() ) ) { // Input var okay.
+			return false;
+		} else if ( $post_id < 1 ) {
+			return false;
+		}
+
+		return $this->is_valid_attach_for_object( $post_id );
+	}
+
+	/**
 	 * Perform save operation after successful is_valid_save() check.
 	 * The call is propagated to all fields in the container.
 	 *
@@ -140,162 +171,6 @@ class Post_Meta_Container extends Container {
 
 		do_action( 'carbon_after_save_custom_fields', $post_id );
 		do_action( 'carbon_after_save_post_meta', $post_id );
-	}
-
-	/**
-	 * Perform checks whether the current save() request is valid
-	 * Possible errors are triggering save() for autosave requests
-	 * or performing post save outside of the post edit page (like Quick Edit)
-	 *
-	 * @see is_valid_save_conditions()
-	 * @param int $post_id ID of the post against which save() is ran
-	 * @return bool
-	 **/
-	public function is_valid_save( $post_id = 0 ) {
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return false;
-		} else if ( ! isset( $_REQUEST[ $this->get_nonce_name() ] ) || ! wp_verify_nonce( $_REQUEST[ $this->get_nonce_name() ], $this->get_nonce_name() ) ) { // Input var okay.
-			return false;
-		} else if ( $post_id < 1 ) {
-			return false;
-		}
-
-		return $this->is_valid_save_conditions( $post_id );
-	}
-
-	/**
-	 * Perform checks whether the current save() request is valid
-	 * Possible errors are triggering save() for autosave requests
-	 * or performing post save outside of the post edit page (like Quick Edit)
-	 *
-	 * @param int $post_id ID of the post against which save() is ran
-	 * @return bool
-	 **/
-	public function is_valid_save_conditions( $post_id ) {
-		$valid = true;
-		$post = get_post( $post_id );
-
-		// Check post type
-		if ( ! in_array( $post->post_type, $this->settings['post_type'] ) ) {
-			return false;
-		}
-
-		// Check show on conditions
-		foreach ( $this->settings['show_on'] as $condition => $value ) {
-			if ( is_null( $value ) ) {
-				continue;
-			}
-
-			switch ( $condition ) {
-				// show_on_post_format
-				case 'post_formats':
-					if ( empty( $value ) || $post->post_type != 'post' ) {
-						break;
-					}
-
-					$current_format = get_post_format( $post_id );
-					if ( ! in_array( $current_format, $value ) ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-
-				// show_on_taxonomy_term or show_on_category
-				case 'category':
-					$this->show_on_category( $value );
-
-					/* fall-through intended */
-				case 'tax_term_id':
-					$current_terms = wp_get_object_terms( $post_id, $this->settings['show_on']['tax_slug'], array( 'fields' => 'ids' ) );
-
-					if ( ! is_array( $current_terms ) || ! in_array( $this->settings['show_on']['tax_term_id'], $current_terms ) ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-
-				// show_on_level
-				case 'level_limit':
-					$post_level = count( get_post_ancestors( $post_id ) ) + 1;
-
-					if ( $post_level != $value ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-
-				// show_on_page
-				case 'page_id':
-					if ( $post_id != $value ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-
-				// show_on_page_children
-				case 'parent_page_id':
-					if ( $post->post_parent != $value ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-
-				// show_on_template
-				case 'template_names':
-					if ( empty( $value ) || $post->post_type != 'page' ) {
-						break;
-					}
-					$current_template = get_post_meta( $post_id, '_wp_page_template', 1 );
-
-					if ( ! in_array( $current_template, $value ) ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-
-				// hide_on_template
-				case 'not_in_template_names':
-					if ( empty( $value ) || $post->post_type != 'page' ) {
-						break;
-					}
-					$current_template = get_post_meta( $post_id, '_wp_page_template', 1 );
-
-					if ( in_array( $current_template, $value ) ) {
-						$valid = false;
-						break 2;
-					}
-
-					break;
-			}
-		}
-
-		return $valid;
-	}
-
-	/**
-	 * Add meta box for each of the container post types
-	 **/
-	public function attach() {
-		foreach ( $this->settings['post_type'] as $post_type ) {
-			add_meta_box(
-				$this->id,
-				$this->title,
-				array( $this, 'render' ),
-				$post_type,
-				$this->settings['panel_context'],
-				$this->settings['panel_priority']
-			);
-		}
-
-		foreach ( $this->settings['post_type'] as $post_type ) {
-			add_filter( "postbox_classes_{$post_type}_{$this->id}", array( $this, 'postbox_classes' ) );
-		}
 	}
 
 	/**
@@ -360,6 +235,138 @@ class Post_Meta_Container extends Container {
 	}
 
 	/**
+	 * Perform checks whether the container should be attached for the specified object (id)
+	 *
+	 * @return bool True if the container is allowed to be attached
+	 **/
+	public function is_valid_attach_for_object( $object_id = 0 ) {
+		$valid = true;
+		$post = get_post( $object_id );
+
+		// Check post type
+		if ( ! in_array( $post->post_type, $this->settings['post_type'] ) ) {
+			return false;
+		}
+
+		// Check show on conditions
+		foreach ( $this->settings['show_on'] as $condition => $value ) {
+			if ( is_null( $value ) ) {
+				continue;
+			}
+
+			switch ( $condition ) {
+				// show_on_post_format
+				case 'post_formats':
+					if ( empty( $value ) || $post->post_type != 'post' ) {
+						break;
+					}
+
+					$current_format = get_post_format( $object_id );
+					if ( ! in_array( $current_format, $value ) ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+
+				// show_on_taxonomy_term or show_on_category
+				case 'category':
+					$this->show_on_category( $value );
+
+					/* fall-through intended */
+				case 'tax_term_id':
+					$current_terms = wp_get_object_terms( $object_id, $this->settings['show_on']['tax_slug'], array( 'fields' => 'ids' ) );
+
+					if ( ! is_array( $current_terms ) || ! in_array( $this->settings['show_on']['tax_term_id'], $current_terms ) ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+
+				// show_on_level
+				case 'level_limit':
+					$post_level = count( get_post_ancestors( $object_id ) ) + 1;
+
+					if ( $post_level != $value ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+
+				// show_on_page
+				case 'page_id':
+					if ( $object_id != $value ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+
+				// show_on_page_children
+				case 'parent_page_id':
+					if ( $post->post_parent != $value ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+
+				// show_on_template
+				case 'template_names':
+					if ( empty( $value ) || $post->post_type != 'page' ) {
+						break;
+					}
+					$current_template = get_post_meta( $object_id, '_wp_page_template', 1 );
+
+					if ( ! in_array( $current_template, $value ) ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+
+				// hide_on_template
+				case 'not_in_template_names':
+					if ( empty( $value ) || $post->post_type != 'page' ) {
+						break;
+					}
+					$current_template = get_post_meta( $object_id, '_wp_page_template', 1 );
+
+					if ( in_array( $current_template, $value ) ) {
+						$valid = false;
+						break 2;
+					}
+
+					break;
+			}
+		}
+
+		return $valid;
+	}
+
+	/**
+	 * Add meta box for each of the container post types
+	 **/
+	public function attach() {
+		foreach ( $this->settings['post_type'] as $post_type ) {
+			add_meta_box(
+				$this->id,
+				$this->title,
+				array( $this, 'render' ),
+				$post_type,
+				$this->settings['panel_context'],
+				$this->settings['panel_priority']
+			);
+		}
+
+		foreach ( $this->settings['post_type'] as $post_type ) {
+			add_filter( "postbox_classes_{$post_type}_{$this->id}", array( $this, 'postbox_classes' ) );
+		}
+	}
+
+	/**
 	 * Revert the result of attach()
 	 **/
 	public function detach() {
@@ -381,16 +388,6 @@ class Post_Meta_Container extends Container {
 	 **/
 	public function render() {
 		include \Carbon_Fields\DIR . '/templates/Container/post_meta.php';
-	}
-
-	/**
-	 * Set the post ID the container will operate with.
-	 *
-	 * @param int $post_id
-	 **/
-	public function set_post_id( $post_id ) {
-		$this->post_id = $post_id;
-		$this->get_datastore()->set_id( $post_id );
 	}
 
 	/**

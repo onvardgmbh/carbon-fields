@@ -2,7 +2,6 @@
 namespace Carbon_Fields\Updater;
 
 use Carbon_Fields\Container\Container;
-use Carbon_Fields\Container\Container_Validator;
 use Carbon_Fields\Helper\Helper;
 
 /**
@@ -16,13 +15,6 @@ class Updater {
 	 * @var arrat
 	 */
 	public static $containers;
-
-	/**
-	 * Instance of the Container_Validator class
-	 * 
-	 * @var object
-	 */
-	public static $validator;
 
 	/**
 	 * The fields that belong
@@ -60,7 +52,6 @@ class Updater {
 	 * @param  string $object_id 
 	 */
 	public static function boot( $context, $object_id = '' ) {
-		self::$validator = new Container_Validator();
 		self::load_containers( $context, $object_id );
 		self::load_fields();
 	}
@@ -107,14 +98,14 @@ class Updater {
 	 * @param  string $id  
 	 */
 	public static function load_containers( $type, $id = '' ) {
-		if ( empty( Container::$active_containers ) ) {
+		if ( empty( Container::get_active_containers() ) ) {
 			do_action( 'carbon_trigger_containers_attach' );
 		}
 
 		$type = self::normalize_type( $type );
 
-		self::$containers = array_filter( Container::$active_containers, function( $container ) use ( $type, $id ) {
-			return self::$validator->is_valid_container( $container, $type, $id, self::$is_rest_request );
+		self::$containers = array_filter( Container::get_active_containers( self::$is_rest_request ), function( $container ) use ( $type, $id ) {
+			return ( $container->type === $type && $container->is_valid_attach_for_object( $id ) );
 		} );
 	}
 

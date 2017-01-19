@@ -4,7 +4,6 @@ namespace Carbon_Fields\Helper;
 
 use Carbon_Fields\Datastore\Datastore;
 use Carbon_Fields\Container\Container;
-use Carbon_Fields\Container\Container_Validator;
 use Carbon_Fields\REST\Data_Manager;
 use Carbon_Fields\REST\Routes;
 use Carbon_Fields\REST\Decorator;
@@ -91,8 +90,7 @@ class Helper {
 	 * Initialize REST routes
 	 */
 	public function init_rest_routes() {
-		$validator = new Container_Validator();
-		$manager   = new Data_Manager( $validator );
+		$manager   = new Data_Manager();
 
 		new Routes( $manager );
 		new Decorator( $manager );
