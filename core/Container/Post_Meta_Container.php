@@ -101,11 +101,9 @@ class Post_Meta_Container extends Container {
 	 * Create DataStore instance, set post ID to operate with (if such exists).
 	 * Bind attach() and save() to the appropriate WordPress actions.
 	 **/
-	public function init( $id = '' ) {
+	public function init() {
 		if ( isset( $_GET['post'] ) ) {
-			$this->set_post_id( $_GET['post'] );
-		} elseif ( $id ) {
-			$this->set_post_id( $id );
+			$this->set_post_id( intval( $_GET['post'] ) );
 		}
 
 		// force post_type to be array
