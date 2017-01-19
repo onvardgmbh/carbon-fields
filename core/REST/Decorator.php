@@ -38,7 +38,9 @@ class Decorator {
 		$containers = $this->get_containers();
 
 		$this->fields = array_map( array( $this, 'filter_fields' ), $containers );
-		$this->fields = call_user_func_array( 'array_merge', $this->fields );
+		if ( !empty( $this->fields ) ) {
+			$this->fields = call_user_func_array( 'array_merge', $this->fields );
+		}
 
 		foreach ( $containers as $container ) {
 			$fields  = $this->filter_fields( $container );
