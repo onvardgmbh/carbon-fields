@@ -281,7 +281,7 @@ class Routes {
 		}
 
 		if ( $request_type === 'POST' ) {
-			return current_user_can( 'edit_theme_options' );
+			return current_user_can( 'manage_options' );
 		}
 	}
 }
