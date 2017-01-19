@@ -34,7 +34,7 @@ class Updater {
 		'complex'          => 'Complex_Value_Parser',
 		'association'      => 'Association_Value_Parser',
 		'map'              => 'Map_Value_Parser',
-		'map_with_address' => 'Map_Value_Parser',
+		'map_with_address' => 'Map_Value_Parser', // deprecated
 	);
 
 	/**
