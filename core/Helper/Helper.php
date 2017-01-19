@@ -4,6 +4,10 @@ namespace Carbon_Fields\Helper;
 
 use Carbon_Fields\Datastore\Datastore;
 use Carbon_Fields\Container\Container;
+use Carbon_Fields\Container\Container_Validator;
+use Carbon_Fields\REST\Data_Manager;
+use Carbon_Fields\REST\Routes;
+use Carbon_Fields\REST\Decorator;
 use Carbon_Fields\Templater\Templater;
 use Carbon_Fields\Libraries\Plugin_Update_Warning\Plugin_Update_Warning;
 use Carbon_Fields\Libraries\Sidebar_Manager\Sidebar_Manager;
@@ -29,11 +33,14 @@ class Helper {
 		
 		add_action( 'init', array( $this, 'trigger_fields_register' ), 0 );
 		add_action( 'carbon_after_register_fields', array( $this, 'init_containers' ) );
+		add_action( 'carbon_after_register_fields', array( $this, 'init_rest_routes' ) );
 		add_action( 'admin_footer', array( $this, 'init_scripts' ), 0 );
 		add_action( 'admin_print_footer_scripts', array( $this, 'print_json_data_script' ), 9 );
 		add_action( 'crb_field_activated', array( $this, 'add_templates' ) );
 		add_action( 'crb_container_activated', array( $this, 'add_templates' ) );
 		add_action( 'after_setup_theme', array( $this, 'load_textdomain' ), 9999 );
+		add_action( 'admin_init', array( $this, 'trigger_containers_attach' ), 0 );
+		add_action( 'carbon_trigger_containers_attach', array( $this, 'trigger_containers_attach' ), 0 );
 
 		# Initialize templater
 		new Templater();
@@ -67,10 +74,34 @@ class Helper {
 	}
 
 	/**
+	 * Attach appropriate containers
+	 * 
+	 */
+	public function trigger_containers_attach() {
+		if ( is_admin() ) {
+			do_action( 'carbon_containers_attach' );
+		} else {
+			$this->init_containers();
+			do_action( 'carbon_containers_attach_all' );
+		}
+	}
+
+	/**
 	 * Initialize containers.
 	 */
 	public function init_containers() {
 		Container::init_containers();
+	}
+	
+	/**
+	 * Initialize REST routes
+	 */
+	public function init_rest_routes() {
+		$validator = new Container_Validator();
+		$manager   = new Data_Manager( $validator );
+
+		new Routes( $manager );
+		new Decorator( $manager );
 	}
 
 	/**
@@ -139,7 +170,7 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	 * @return mixed        Meta value.
 	 */
 	public static function get_post_meta( $id, $name, $type = null ) {
-		$name = $name[0] == '_' ? $name : '_' . $name;
+		$name = self::prepare_meta_name( $name );
 
 		return self::get_field_value( 'post_meta', $name, $type, $id );
 	}
@@ -176,7 +207,7 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	 * @return mixed        Meta value.
 	 */
 	public static function get_term_meta( $id, $name, $type = null ) {
-		$name = $name[0] == '_' ? $name: '_' . $name;
+		$name = self::prepare_meta_name( $name );
 
 		return self::get_field_value( 'term_meta', $name, $type, $id );
 	}
@@ -190,7 +221,7 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	 * @return mixed        Meta value.
 	 */
 	public static function get_user_meta( $id, $name, $type = null ) {
-		$name = $name[0] == '_' ? $name: '_' . $name;
+		$name = self::prepare_meta_name( $name );
 
 		return self::get_field_value( 'user_meta', $name, $type, $id );
 	}
@@ -204,9 +235,29 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	 * @return mixed        Meta value.
 	 */
 	public static function get_comment_meta( $id, $name, $type = null ) {
-		$name = $name[0] == '_' ? $name: '_' . $name;
+		$name = self::prepare_meta_name( $name );
 
 		return self::get_field_value( 'comment_meta', $name, $type, $id );
+	}
+
+	/**
+	 * Add underscore to the name, if missing
+	 * 
+	 * @param  string $name Field Name
+	 * @return string Field Name
+	 */
+	public static function prepare_meta_name( $name ) {
+		return $name = $name[0] === '_' ? $name : '_' . $name;		
+	}
+
+	/**
+	 * Prepare the data type name
+	 * 
+	 * @param  string $data_type 
+	 * @return string
+	 */
+	public static function prepare_data_type_name( $data_type ) {
+		return str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $data_type ) ) );
 	}
 
 	/**
@@ -220,7 +271,7 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	 * @return mixed             Meta value.
 	 */
 	public static function get_field_value( $data_type, $name, $type = null, $id = null ) {
-		$datastore_name = str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $data_type ) ) );
+		$datastore_name = self::prepare_data_type_name( $data_type );
 
 		switch ( $type ) {
 			case 'complex':

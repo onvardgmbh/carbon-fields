@@ -47,7 +47,9 @@ class Nav_Menu_Container extends Container {
 	public function init( $menu_item_id = 0 ) {
 		$this->get_datastore()->set_id( $menu_item_id );
 		$this->load();
-		$this->_attach();
+		
+		add_action( 'carbon_containers_attach', array( $this, '_attach' ) );
+		add_action( 'carbon_containers_attach_all', array( $this, '_attach_all' ) );
 
 		// Only the base container should register for updating/rendering
 		if ( $menu_item_id === 0 ) {

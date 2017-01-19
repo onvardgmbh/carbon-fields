@@ -135,6 +135,15 @@ abstract class Container implements Datastore_Holder_Interface {
 	protected $has_default_datastore = true;
 
 	/**
+	 * Whether the container should be included in the response of the requests to the REST API
+	 *
+	 * @see  set_rest_visibility
+	 * @see  get_rest_visibility
+	 * @var boolean
+	 */
+	protected $visible_in_rest = true;
+
+	/**
 	 * Create a new container of type $type and name $name and label $label.
 	 *
 	 * @param string $type
@@ -397,13 +406,28 @@ abstract class Container implements Datastore_Holder_Interface {
 			call_user_func_array( array( $this, 'attach' ), $param );
 
 			if ( call_user_func_array( array( $this, 'is_active' ), $param ) ) {
-				self::activate_container( $this );
-
-				$fields = $this->get_fields();
-				foreach ( $fields as $field ) {
-					self::activate_field( $field );
-				}
+				$this->_attach_containers();
 			}
+		}
+	}
+
+	/**
+	 * Attach all containers
+	 * 
+	 */
+	public function _attach_all() {
+		$this->_attach_containers();
+	}
+
+	/**
+	 * Calls the container-specific attach() method
+	 */
+	private function _attach_containers() {
+		self::activate_container( $this );
+
+		$fields = $this->get_fields();
+		foreach ( $fields as $field ) {
+			self::activate_field( $field );
 		}
 	}
 
@@ -502,6 +526,36 @@ abstract class Container implements Datastore_Holder_Interface {
 		$this->create_tab( $tab_name, $fields );
 
 		return $this;
+	}
+
+	/**
+	 * Configuration function for setting the container visibility in the response of the requests to the REST API
+	 * 
+	 * @param  bool $visible
+	 * @return object $this
+	 */
+	public function show_in_rest( $visible ) {
+		$this->set_rest_visibility( $visible );
+
+		return $this;
+	}
+
+	/**
+	 * Set the REST visibility of the container
+	 * 
+	 * @param bool $visible
+	 */
+	public function set_rest_visibility( $visible ) {
+		$this->visible_in_rest = $visible;
+	}
+
+	/**
+	 * Get the REST visibility of the container
+	 * 
+	 * @return bool True if the container is visible
+	 */
+	public function get_rest_visibility() {
+		return $this->visible_in_rest;
 	}
 
 	/**
