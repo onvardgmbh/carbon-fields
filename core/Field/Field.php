@@ -171,7 +171,7 @@ class Field implements Datastore_Holder_Interface {
 	 * @see  get_rest_visibility
 	 * @var boolean
 	 */
-	protected $visible_in_rest = true;
+	protected $visible_in_rest = false;
 
 	/**
 	 * Create a new field of type $type and name $name and label $label.
