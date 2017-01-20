@@ -212,6 +212,32 @@ class Field implements Datastore_Holder_Interface {
 	}
 
 	/**
+	 * Returns a field instance by it's name from array of containers
+	 *
+	 * @param string $field_name Field name
+	 * @param array $containers Array of containers to search in
+	 * 
+	 * @return array
+	 **/
+	public static function get_field_by_name_in_containers( $field_name, $containers ) {
+		$all_fields = array_map( function( $container ) {
+			return $container->get_fields();
+		}, $containers );
+
+		if ( !empty( $all_fields ) ) {
+			$all_fields = call_user_func_array( 'array_merge', $all_fields );
+		}
+
+		foreach ( $all_fields as $field ) {
+			if ( $field->get_name() === $field_name ) {
+				return $field;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Create a field from a certain type with the specified label.
 	 * @param string $name  Field name
 	 * @param string $label Field label

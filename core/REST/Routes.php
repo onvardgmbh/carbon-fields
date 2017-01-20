@@ -1,27 +1,12 @@
 <?php 
 namespace Carbon_Fields\REST;
 
-use Carbon_Fields\Updater\Updater;
+use \Carbon_Fields\Updater\Updater;
 
 /**
 * Register custom REST routes		
 */
 class Routes {
-
-	/**
-	 * Singleton implementation.
-	 *
-	 * @return Sidebar_Manager
-	 */
-	public static function instance() {
-		// Store the instance locally to avoid private static replication.
-		static $instance;
-
-		if ( ! is_a( $instance, 'Routes' ) ) {
-			$instance = new Routes();
-		}
-		return $instance;
-	}
 
 	/**
 	 * Carbon Fields routes
@@ -78,19 +63,34 @@ class Routes {
 	 * @var string
 	 */
 	protected $vendor = 'carbon-fields';
+
+	/**
+	 * Singleton implementation.
+	 *
+	 * @return Routes
+	 */
+	public static function instance() {
+		// Store the instance locally to avoid private static replication.
+		static $instance;
+
+		if ( ! is_a( $instance, 'Routes' ) ) {
+			$instance = new Routes();
+		}
+		return $instance;
+	}
 	
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ), 15 );
 	}
 
 	/**
-	 * Creates the custom routes
+	 * Registers the custom routes
 	 * 
-	 * @see  create()
+	 * @see  register_route()
 	 */
 	public function register_routes() {
 		foreach ( $this->routes as $route ) {
-			$this->create( $route );
+			$this->register_route( $route );
 		}
 	}
 
@@ -99,7 +99,7 @@ class Routes {
 	 * 
 	 * @param  array $route
 	 */
-	public function create( $route ) {
+	protected function register_route( $route ) {
 		register_rest_route( $this->get_vendor() . '/v' . $this->get_version(), $route['path'], array(
 			'methods'             => $route['methods'],
 			'permission_callback' => array( $this, $route['permission_callback'] ),
@@ -114,7 +114,7 @@ class Routes {
 	 * @return array
 	 */
 	public function get_post_meta( $data ) {
-		$carbon_data = $this->get_data( 'Post_Meta', $data['id'] );
+		$carbon_data = $this->get_all_field_values( 'Post_Meta', $data['id'] );
 		return array( 'carbon_fields' => $carbon_data );
 	}
 
@@ -125,7 +125,7 @@ class Routes {
 	 * @return array
 	 */
 	public function get_user_meta( $data ) {
-		$carbon_data = $this->get_data( 'User_Meta', $data['id'] );
+		$carbon_data = $this->get_all_field_values( 'User_Meta', $data['id'] );
 		return array( 'carbon_fields' => $carbon_data );
 	}
 
@@ -136,7 +136,7 @@ class Routes {
 	 * @return array
 	 */
 	public function get_term_meta( $data ) {
-		$carbon_data = $this->get_data( 'Term_Meta', $data['id'] );
+		$carbon_data = $this->get_all_field_values( 'Term_Meta', $data['id'] );
 		return array( 'carbon_fields' => $carbon_data );
 	}
 
@@ -147,8 +147,19 @@ class Routes {
 	 * @return array
 	 */
 	public function get_comment_meta( $data ) {
-		$carbon_data = $this->get_data( 'Comment_Meta', $data['id'] );
+		$carbon_data = $this->get_all_field_values( 'Comment_Meta', $data['id'] );
 		return array( 'carbon_fields' => $carbon_data );
+	}
+
+	/**
+	 * Wrapper method used for retrieving data from Data_Manager
+	 * 
+	 * @param  string $container_type 
+	 * @param  string $id
+	 * @return array
+	 */
+	protected function get_all_field_values( $container_type, $id = '' ) {
+		return Data_Manager::instance()->get_all_field_values( $container_type, $id );
 	}
 
 	/**
@@ -156,8 +167,8 @@ class Routes {
 	 * 
 	 * @return array
 	 */
-	public function get_options() {
-		$carbon_data = $this->get_data( 'Theme_Options' );
+	protected function get_options() {
+		$carbon_data = $this->get_all_field_values( 'Theme_Options' );
 		return array( 'carbon_fields' => $carbon_data );
 	}
 
@@ -167,15 +178,13 @@ class Routes {
 	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_Error|WP_REST_Response
 	 */
-	public function set_options( $request ) {
+	protected function set_options( $request ) {
 		$options = $request->get_params();
 		
 		if ( empty( $options ) ) {
 			return new \WP_REST_Response( __( 'No option names provided', 'crb' ) );
 		}
 		
-		Updater::$is_rest_request = true;
-
 		foreach ( $options as $key => $value ) {
 			try {
 				Updater::update_field( 'theme_option', null, $key, $value );	
@@ -188,14 +197,39 @@ class Routes {
 	}
 
 	/**
-	 * Wrapper method used for retrieving data from Data_Manager
+	 * Proxy method for handling get/set for theme options
 	 * 
-	 * @param  string $container_type 
-	 * @param  string $id
-	 * @return array
+	 * @param  WP_REST_Request $request 
+	 * @return array|WP_REST_Response 
 	 */
-	public function get_data( $container_type, $id = '' ) {
-		return Data_Manager::instance()->get_data( $container_type, $id );
+	public function options_accessor( $request ) {
+		$request_type = $request->get_method();
+		
+		if ( $request_type === 'GET' ) {
+			return $this->get_options();
+		}
+
+		if ( $request_type === 'POST' ) {
+			return $this->set_options( $request );
+		}
+	}
+
+	/**
+	 * Proxy method for handling theme options permissions
+	 * 
+	 * @param  WP_REST_Request $request 
+	 * @return bool
+	 */
+	public function options_permission( $request ) {
+		$request_type = $request->get_method();
+
+		if ( $request_type === 'GET' ) {
+			return true;
+		}
+
+		if ( $request_type === 'POST' ) {
+			return current_user_can( 'manage_options' );
+		}
 	}
 
 	/**
@@ -247,47 +281,11 @@ class Routes {
 	}
 
 	/**
-	 * Proxy method for handling get/set for theme options
-	 * 
-	 * @param  WP_REST_Request $request 
-	 * @return array|WP_REST_Response 
-	 */
-	public function options_accessor( $request ) {
-		$request_type = $request->get_method();
-		
-		if ( $request_type === 'GET' ) {
-			return $this->get_options();
-		}
-
-		if ( $request_type === 'POST' ) {
-			return $this->set_options( $request );
-		}
-	}
-
-	/**
 	 * Allow access to an endpoint
 	 * 
 	 * @return bool true
 	 */
 	public function allow_access() {
 		return true;
-	}
-
-	/**
-	 * Proxy method for handling theme options permissions
-	 * 
-	 * @param  WP_REST_Request $request 
-	 * @return bool
-	 */
-	public function options_permission( $request ) {
-		$request_type = $request->get_method();
-
-		if ( $request_type === 'GET' ) {
-			return true;
-		}
-
-		if ( $request_type === 'POST' ) {
-			return current_user_can( 'manage_options' );
-		}
 	}
 }

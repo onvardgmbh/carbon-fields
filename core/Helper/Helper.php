@@ -102,19 +102,6 @@ class Helper {
 	}
 
 	/**
-	 * Print the carbon JSON data script.
-	 */
-	public function print_json_data_script() {
-		?>
-<script type="text/javascript">
-<!--//--><![CDATA[//><!--
-var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
-//--><!]]>
-</script>
-		<?php
-	}
-
-	/**
 	 * Retrieve containers and sidebars for use in the JS.
 	 *
 	 * @return array $carbon_data
@@ -148,6 +135,43 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 		}
 
 		return $carbon_data;
+	}
+
+	/**
+	 * Print the carbon JSON data script.
+	 */
+	public function print_json_data_script() {
+		?>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
+//--><!]]>
+</script>
+		<?php
+	}
+
+	/**
+	 * Adds the field/container template(s) to the templates stack.
+	 *
+	 * @param object $object field or container object
+	 **/
+	public function add_templates( $object ) {
+		$templates = $object->get_templates();
+
+		if ( ! $templates ) {
+			return false;
+		}
+
+		foreach ( $templates as $name => $callback ) {
+			ob_start();
+
+			call_user_func( $callback );
+
+			$html = ob_get_clean();
+
+			// Add the template to the stack
+			Templater::add_template( $name, $html );
+		}
 	}
 
 	/**
@@ -341,30 +365,6 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	}
 
 	/**
-	 * Adds the field/container template(s) to the templates stack.
-	 *
-	 * @param object $object field or container object
-	 **/
-	public function add_templates( $object ) {
-		$templates = $object->get_templates();
-
-		if ( ! $templates ) {
-			return false;
-		}
-
-		foreach ( $templates as $name => $callback ) {
-			ob_start();
-
-			call_user_func( $callback );
-
-			$html = ob_get_clean();
-
-			// Add the template to the stack
-			Templater::add_template( $name, $html );
-		}
-	}
-
-	/**
 	 * Build a string of concatenated pieces for an OR regex.
 	 *
 	 * @param  array  $pieces Pieces
@@ -553,5 +553,32 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Retrieve ID from object
+	 * based on $context
+	 * 
+	 * @param  object $object
+	 * @param  string $context
+	 * @return string
+	 */
+	public static function get_object_id( $object, $context ) {
+		$context = Helper::prepare_data_type_name( $context );
+		switch ( $context ) {
+			case 'Post_Meta': // fallthrough intended
+			case 'User_Meta': 
+				return $object->ID;
+				break;
+
+			case 'Term_Meta':
+				return $object->term_id;
+				break;
+
+			case 'Comment_Meta' : 
+				return $object->comment_ID;
+				break;
+		}
+		return 0;
 	}
 }

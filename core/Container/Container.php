@@ -198,10 +198,24 @@ abstract class Container implements Datastore_Holder_Interface {
 	/**
 	 * Returns all the active containers created via factory
 	 *
+	 * @param string $type Container type
+	 * @param integer $for_object_id Object id the container must be attached to
+	 * @param bool $in_rest Pull only containers that are visible in REST API
+	 * 
 	 * @return array
 	 **/
-	public static function get_active_containers( $in_rest = false ) {
+	public static function get_active_containers( $type = '', $for_object_id = 0, $in_rest = false ) {
 		$containers = self::$active_containers;
+
+		if ( $type !== '' ) {
+			$containers = array_filter( $containers, function( $container ) use ( $type, $for_object_id ) {
+				$valid = ( $container->type === $type );
+				if ( $for_object_id !== 0 ) {
+					$valid = $valid && $container->is_valid_attach_for_object( $for_object_id );
+				}
+				return $valid;
+			} );
+		}
 
 		if ( $in_rest ) {
 			$containers = array_filter( $containers, function( $container ) {
