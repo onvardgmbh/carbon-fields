@@ -84,7 +84,7 @@ class Routes {
 	}
 
 	/**
-	 * Registers the custom routes
+	 * Register custom routes
 	 * 
 	 * @see  register_route()
 	 */
@@ -95,7 +95,7 @@ class Routes {
 	}
 
 	/**
-	 * Registers a custom REST route
+	 * Register a custom REST route
 	 * 
 	 * @param  array $route
 	 */
@@ -108,7 +108,7 @@ class Routes {
 	}
 
 	/**
-	 * Retrieves Carbon post meta
+	 * Get Carbon Fields post meta values
 	 * 
 	 * @param  array $data
 	 * @return array
@@ -119,7 +119,7 @@ class Routes {
 	}
 
 	/**
-	 * Retrieves Carbon user meta
+	 * Get Carbon Fields user meta values
 	 * 
 	 * @param  array $data
 	 * @return array
@@ -130,7 +130,7 @@ class Routes {
 	}
 
 	/**
-	 * Retrieves Carbon term meta
+	 * Get Carbon Fields term meta values
 	 * 
 	 * @param  array $data
 	 * @return array
@@ -141,7 +141,7 @@ class Routes {
 	}
 
 	/**
-	 * Retrieves Carbon comment meta
+	 * Get Carbon Fields comment meta values
 	 * 
 	 * @param  array $data
 	 * @return array
@@ -163,7 +163,7 @@ class Routes {
 	}
 
 	/**
-	 * Retrieves Carbon theme options
+	 * Retrieve Carbon theme options
 	 * 
 	 * @return array
 	 */
@@ -233,14 +233,14 @@ class Routes {
 	}
 
 	/**
-	 * Sets routes
+	 * Set routes
 	 */
 	public function set_routes( $routes ) {
 		$this->routes = $routes;
 	}
 
 	/**
-	 * Returns routes
+	 * Return routes
 	 * 
 	 * @return array
 	 */
@@ -249,14 +249,14 @@ class Routes {
 	}
 
 	/**
-	 * Sets version
+	 * Set version
 	 */
 	public function set_version( $version ) {
 		$this->version = $version;
 	}
 
 	/**
-	 * Returns version
+	 * Return version
 	 * 
 	 * @return string
 	 */
@@ -265,14 +265,14 @@ class Routes {
 	}
 
 	/**
-	 * Sets vendor
+	 * Set vendor
 	 */
 	public function set_vendor( $vendor ) { 
 		$this->vendor = $vendor;
 	}
 
 	/**
-	 * Returns vendor
+	 * Return vendor
 	 * 
 	 * @return string
 	 */

@@ -65,17 +65,18 @@ class Updater {
 	/**
 	 * Get all containers of specific type and attached to a specific object id
 	 * 
-	 * @param  string $type
-	 * @param  string $id  
+	 * @param  string $container_type
+	 * @param  string $object_id
+	 * @param  string $rest_containers_only
 	 */
-	protected static function get_containers( $type, $object_id, $rest_containers_only = false ) {
+	protected static function get_containers( $container_type, $object_id, $rest_containers_only = false ) {
 		if ( empty( Container::get_active_containers() ) ) {
 			do_action( 'carbon_trigger_containers_attach' );
 		}
 
-		$type = self::normalize_container_type( $type );
+		$container_type = self::normalize_container_type( $container_type );
 
-		return Container::get_active_containers( $type, $object_id, $rest_containers_only );
+		return Container::get_active_containers( $container_type, $object_id, $rest_containers_only );
 	}
 
 	/**
@@ -84,14 +85,14 @@ class Updater {
 	 * @param  string $type 
 	 * @return string       
 	 */
-	protected static function normalize_container_type( $type ) {
-		$type = Helper::prepare_data_type_name( $type );
+	protected static function normalize_container_type( $container_type ) {
+		$container_type = Helper::prepare_data_type_name( $container_type );
 
-		if ( $type === 'Theme_Option' ) {
-			$type = 'Theme_Options';
+		if ( $container_type === 'Theme_Option' ) {
+			$container_type = 'Theme_Options';
 		}
 
-		return $type;
+		return $container_type;
 	}
 
 	/**

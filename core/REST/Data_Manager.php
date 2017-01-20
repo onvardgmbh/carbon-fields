@@ -9,8 +9,7 @@ use \Carbon_Fields\Container\Container;
 class Data_Manager {
 	
 	/**
-	 * Special field types, that require 
-	 * different data loading
+	 * Special field types, that require different data loading
 	 * 
 	 * @var array
 	 */
@@ -22,8 +21,7 @@ class Data_Manager {
 	); 
 
 	/**
-	 * Field types that should be excluded
-	 * from the REST response
+	 * Field types that should be excluded from the REST response
 	 * 
 	 * @var array
 	 */
@@ -58,7 +56,8 @@ class Data_Manager {
 	}
 
 	/**
-	 * Checks if fields should be excluded from the response
+	 * Filters an array of fields to return only the fields that should
+	 * appear in REST API and are not of an excluded field type
 	 * 
 	 * @param  array $fields 
 	 * @return array
@@ -68,16 +67,15 @@ class Data_Manager {
 	}
 
 	/**
-	 * Returns the Carbon Fields data based
-	 * on $type and $object_id
+	 * Returns the Carbon Fields data based on $container_type and $object_id
 	 * 
-	 * @param  string $type 
+	 * @param  string $container_type 
 	 * @param  string $object_id 
 	 * @return array
 	 */
-	public function get_all_field_values( $type, $object_id = '' ) {
+	public function get_all_field_values( $container_type, $object_id = '' ) {
 		$response   = array();
-		$containers = Container::get_active_containers( $type, $object_id, true );
+		$containers = Container::get_active_containers( $container_type, $object_id, true );
 
 		foreach ( $containers as $container ) {
 			$fields = $this->filter_fields( $container->get_fields() );
@@ -91,7 +89,7 @@ class Data_Manager {
 	}
 
 	/**
-	 * Loads field value (proxy for specific field implementations)
+	 * Return field value for specific object id (proxy for specific field implementations)
 	 * 
 	 * @param  object $field
 	 * @return array
@@ -106,7 +104,7 @@ class Data_Manager {
 	}
 
 	/**
-	 * Loads field value
+	 * Return field value
 	 * 
 	 * @param  object $field
 	 * @return array
@@ -116,7 +114,7 @@ class Data_Manager {
 	}
 
 	/**
-	 * Loads the value of a complex field
+	 * Return the value of a complex field
 	 * 
 	 * @param  object $field 
 	 * @return array
@@ -127,7 +125,7 @@ class Data_Manager {
 	}
 
 	/**
-	 * Load the value of a map field
+	 * Return the value of a map field
 	 * 
 	 * @param  object $field 
 	 * @return array
@@ -144,7 +142,7 @@ class Data_Manager {
 	}
 
 	/**
-	 * Loads the value of a relationship field
+	 * Return the value of a relationship field
 	 * 
 	 * @param  object $field 
 	 * @return array
@@ -154,7 +152,7 @@ class Data_Manager {
 	}
 
 	/**
-	 * Loads the value of an association field
+	 * Return the value of an association field
 	 * 
 	 * @param object $field 
 	 * @return array

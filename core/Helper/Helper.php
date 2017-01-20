@@ -538,6 +538,7 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 
 	/**
 	 * Recursive sorting function by array key.
+	 * 
 	 * @param  array  &$array     The input array.
 	 * @param  int    $sort_flags Flags for controlling sorting behavior.
 	 * @return array              Sorted array.
@@ -556,8 +557,7 @@ var carbon_json = <?php echo wp_json_encode( $this->get_json_data() ); ?>;
 	}
 
 	/**
-	 * Retrieve ID from object
-	 * based on $context
+	 * Retrieve ID from object based on $context
 	 * 
 	 * @param  object $object
 	 * @param  string $context

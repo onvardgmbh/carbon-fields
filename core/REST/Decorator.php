@@ -33,8 +33,7 @@ class Decorator {
 	}
 
 	/**
-	 * Registers Carbon Fields using
-	 * the register_rest_field() function
+	 * Register Carbon Fields using the register_rest_field() function
 	 */
 	public function register_fields() {
 		$containers = $this->get_filtered_containers();
@@ -64,8 +63,7 @@ class Decorator {
 	}
 
 	/**
-	 * Return all containers that 
-	 * should be visible in the core REST API responses
+	 * Return all containers that should be visible in the core REST API responses
 	 *
 	 * @return array
 	 */
@@ -76,10 +74,9 @@ class Decorator {
 	}
 
 	/**
-	 * Return all fields attached to a container
-	 * that should be included in the REST API response
+	 * Return all fields attached to a container that should be included in the REST API response
 	 * 
-	 * @param object $container
+	 * @param \Carbon_Fields\Container\Container $container
 	 * @return array
 	 */
 	public function get_filtered_fields( $container ) {
