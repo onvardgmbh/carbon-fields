@@ -203,7 +203,7 @@ msgstr "Ausgewählte Einträge"
 
 #: core/Field/Relationship_Field.php:219
 msgid "out of"
-msgstr "außerhalb"
+msgstr "von"
 
 #: core/Field/Relationship_Field.php:226
 msgid "Search"
