@@ -131,8 +131,7 @@ class Theme_Options_Container extends Container {
 			$this->title,
 			$this->settings['permissions'],
 			$this->settings['file'],
-			array( $this, 'render' ),
-			$this->icon
+			array( $this, 'render' )
 		);
 
 		$page_hook = get_plugin_page_hookname( $this->settings['file'], '' );
